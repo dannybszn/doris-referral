@@ -1,0 +1,109 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: 225 6% 13%;
+  --foreground: 0 0% 100%;
+  --card: 223 7% 21%;
+  --card-foreground: 0 0% 100%;
+  --popover: 223 7% 21%;
+  --popover-foreground: 0 0% 100%;
+  --primary: 235 86% 65%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 223 7% 21%;
+  --secondary-foreground: 0 0% 100%;
+  --muted: 225 6% 13%;
+  --muted-foreground: 214 8% 51%;
+  --accent: 235 86% 65%;
+  --accent-foreground: 0 0% 100%;
+  --destructive: 0 100% 50%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 223 7% 21%;
+  --input: 223 7% 21%;
+  --ring: 235 86% 65%;
+  --radius: 0.75rem;
+}
+
+body {
+  @apply bg-background text-foreground;
+}
+
+/* Disable text selection */
+* {
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+/* Allow text selection for input fields and textareas */
+input, textarea {
+  -webkit-user-select: text;
+  -moz-user-select: text;
+  -ms-user-select: text;
+  user-select: text;
+}
+
+.discord-button {
+  @apply bg-primary text-primary-foreground hover:bg-primary/90 rounded-full font-medium;
+}
+
+/* Dynamic Carousel Effect */
+.carousel-slide {
+  transition: transform 0.3s ease, opacity 0.3s ease;
+}
+
+.embla__viewport {
+  overflow: visible;
+}
+
+.embla__container {
+  display: flex;
+  align-items: center;
+  height: 300px;
+}
+
+/* Updated Card and Dialog styles */
+.card,
+.dialog-content,
+.popover-content,
+.dropdown-menu-content,
+.tooltip-content {
+  @apply bg-card text-card-foreground rounded-[var(--radius)];
+  box-shadow: 0 4px 15px -3px rgba(0, 0, 0, 0.3), 0 2px 8px -2px rgba(0, 0, 0, 0.2);
+  border: none;
+}
+
+/* Global styles for buttons, inputs, and other UI elements */
+button,
+.button,
+input,
+textarea,
+select {
+  @apply rounded-[calc(var(--radius)-0.25rem)];
+}
+
+/* Specific styles for larger elements */
+.large-element {
+  @apply rounded-[var(--radius)];
+}
+
+/* Custom scrollbar for dark theme */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--secondary);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--muted-foreground);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--accent);
+}

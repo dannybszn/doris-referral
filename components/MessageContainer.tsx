@@ -11,7 +11,8 @@ interface MessageContainerProps {
     name: string;
     role: string;
     avatar?: string;
-  };
+    image?: string;
+  } | null;
 }
 
 const MessageContainer: React.FC<MessageContainerProps> = ({ messages, currentUserId, onSendMessage, conversationPartner }) => {
@@ -23,16 +24,20 @@ const MessageContainer: React.FC<MessageContainerProps> = ({ messages, currentUs
 
   useEffect(scrollToBottom, [messages]);
 
+  const getAvatarSrc = () => {
+    return conversationPartner?.avatar || conversationPartner?.image || '';
+  };
+
   return (
     <div className="flex flex-col h-full">
       <div className="bg-card border-b border-border p-4 flex items-center">
         <Avatar className="h-10 w-10 mr-3">
-          <AvatarImage src={conversationPartner.avatar} />
-          <AvatarFallback>{conversationPartner.name.charAt(0)}</AvatarFallback>
+          <AvatarImage src={getAvatarSrc()} />
+          <AvatarFallback>{conversationPartner?.name.charAt(0) || 'U'}</AvatarFallback>
         </Avatar>
         <div>
-          <h2 className="text-xl font-semibold">{conversationPartner.name}</h2>
-          <p className="text-sm text-muted-foreground">{conversationPartner.role}</p>
+          <h2 className="text-xl font-semibold">{conversationPartner?.name || 'Unknown User'}</h2>
+          <p className="text-sm text-muted-foreground">{conversationPartner?.role || 'User'}</p>
         </div>
       </div>
       <div className="flex-grow overflow-y-auto p-4">

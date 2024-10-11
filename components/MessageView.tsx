@@ -1,12 +1,14 @@
 import React from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { format, parseISO } from 'date-fns';
+import { Check, CheckCheck } from 'lucide-react';
 
 interface Message {
   _id: string;
   sender: string;
   content: string;
   timestamp: string;
+  read: boolean;
 }
 
 interface MessageViewProps {
@@ -47,9 +49,14 @@ const MessageView: React.FC<MessageViewProps> = ({ messages, currentUserId }) =>
                 }`}
               >
                 <p>{message.content}</p>
-                <p className="text-xs mt-1 opacity-70">
-                  {format(parseISO(message.timestamp), 'MM/dd/yyyy h:mm a')}
-                </p>
+                <div className="flex items-center justify-end mt-1 space-x-1">
+                  <p className="text-xs opacity-70">
+                    {format(parseISO(message.timestamp), 'MM/dd/yyyy h:mm a')}
+                  </p>
+                  {isSentMessage && (
+                    message.read ? <CheckCheck className="h-4 w-4" /> : <Check className="h-4 w-4" />
+                  )}
+                </div>
               </div>
             </div>
           </div>

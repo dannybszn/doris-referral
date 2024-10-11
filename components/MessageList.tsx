@@ -1,5 +1,6 @@
 import React from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
 
 interface Conversation {
   _id: string;
@@ -8,6 +9,7 @@ interface Conversation {
   companyName?: string;
   avatar?: string;
   role: string;
+  unreadCount: number;
 }
 
 interface MessageListProps {
@@ -43,7 +45,14 @@ const MessageList: React.FC<MessageListProps> = ({ conversations, selectedConver
               <AvatarFallback>{getName(conversation).charAt(0)}</AvatarFallback>
             </Avatar>
             <div className="flex-grow min-w-0">
-              <h3 className="font-semibold truncate">{getName(conversation)}</h3>
+              <div className="flex justify-between items-center">
+                <h3 className="font-semibold truncate">{getName(conversation)}</h3>
+                {conversation.unreadCount > 0 && (
+                  <Badge variant="destructive" className="ml-2">
+                    {conversation.unreadCount}
+                  </Badge>
+                )}
+              </div>
               <p className="text-sm text-muted-foreground">{conversation.role}</p>
             </div>
           </div>

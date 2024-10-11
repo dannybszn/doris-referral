@@ -1,18 +1,32 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
-import { mockMessages } from '@/lib/mockData'
+import { connectToDatabase } from '@/lib/db'
+import { Message } from '@/models/Message'
+import jwt from 'jsonwebtoken'
 
-export default function handler(
+export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
-  if (req.method === 'GET') {
+  if (req.method !== 'GET') {
+    return res.status(405).json({ message: 'Method not allowed' })
+  }
+
+  try {
+    const token = req.headers.authorization?.split(' ')[1]
+    if (!token) {
+      return res.status(401).json({ message: 'Unauthorized' })
+    }
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as { userId: string }
+    await connectToDatabase()
+
     const { conversationId } = req.query
-    const messages = mockMessages.filter(
-      message => message.sender === conversationId || message.recipient === conversationId
-    )
+    const messages = await Message.find({ conversation: conversationId })
+      .sort({ timestamp: 1 })
+
     res.status(200).json(messages)
-  } else {
-    res.setHeader('Allow', ['GET'])
-    res.status(405).end(`Method ${req.method} Not Allowed`)
+  } catch (error) {
+    console.error('Error fetching messages:', error)
+    res.status(500).json({ message: 'Server error' })
   }
 }

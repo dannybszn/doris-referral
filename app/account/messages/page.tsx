@@ -5,58 +5,152 @@ import { useRouter } from 'next/navigation';
 import MessageList from '@/components/MessageList';
 import MessageContainer from '@/components/MessageContainer';
 import CreateConversationButton from '@/components/CreateConversationButton';
-import { useMockAuth } from '@/lib/mockAuthContext';
-import { mockConversations, mockMessages } from '@/lib/mockData';
 
 export default function Messages() {
   const [selectedConversation, setSelectedConversation] = useState<string | null>(null);
   const [conversations, setConversations] = useState<any[]>([]);
   const [messages, setMessages] = useState<any[]>([]);
+  const [user, setUser] = useState<any>(null);
   const router = useRouter();
-  const { user, getToken } = useMockAuth();
 
   useEffect(() => {
-    if (!user) {
+    const token = localStorage.getItem('token');
+    if (!token) {
       router.push('/account/login');
       return;
     }
 
-    setConversations(mockConversations);
-  }, [user, router]);
+    fetchUser(token);
+    fetchConversations(token);
+  }, [router]);
 
   useEffect(() => {
     if (selectedConversation) {
-      setMessages(mockMessages.filter(msg => 
-        msg.sender === selectedConversation || msg.recipient === selectedConversation
-      ));
+      fetchMessages(selectedConversation);
     }
   }, [selectedConversation]);
+
+  const fetchUser = async (token: string) => {
+    try {
+      const response = await fetch('/api/user', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      if (response.ok) {
+        const userData = await response.json();
+        setUser(userData);
+      } else {
+        throw new Error('Failed to fetch user data');
+      }
+    } catch (error) {
+      console.error('Error fetching user:', error);
+      router.push('/account/login');
+    }
+  };
+
+  const fetchConversations = async (token: string) => {
+    try {
+      const response = await fetch('/api/conversations', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setConversations(data);
+      } else {
+        console.error('Failed to fetch conversations');
+      }
+    } catch (error) {
+      console.error('Error fetching conversations:', error);
+    }
+  };
+
+  const fetchMessages = async (conversationId: string) => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`/api/messages/${conversationId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setMessages(data);
+      } else {
+        console.error('Failed to fetch messages');
+      }
+    } catch (error) {
+      console.error('Error fetching messages:', error);
+    }
+  };
 
   const handleSendMessage = async (message: string) => {
     if (!selectedConversation) return;
 
-    const newMessage = {
-      _id: (messages.length + 1).toString(),
-      sender: 'currentUser',
-      recipient: selectedConversation,
-      content: message,
-      timestamp: new Date().toISOString(),
-    };
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('/api/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          conversationId: selectedConversation,
+          content: message
+        })
+      });
 
-    setMessages(prevMessages => [...prevMessages, newMessage]);
+      if (response.ok) {
+        const newMessage = await response.json();
+        setMessages(prevMessages => [...prevMessages, newMessage]);
+        // Refresh conversations to update last message
+        fetchConversations(token!);
+      } else {
+        console.error('Failed to send message');
+      }
+    } catch (error) {
+      console.error('Error sending message:', error);
+    }
   };
 
-  const handleCreateConversation = (recipientId: string) => {
-    setSelectedConversation(recipientId);
+  const handleCreateConversation = async (recipientId: string) => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('/api/conversations', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ recipientId })
+      });
+
+      if (response.ok) {
+        const newConversation = await response.json();
+        setConversations(prev => [newConversation, ...prev]);
+        setSelectedConversation(newConversation._id);
+        fetchMessages(newConversation._id);
+      } else {
+        console.error('Failed to create new conversation');
+      }
+    } catch (error) {
+      console.error('Error creating new conversation:', error);
+    }
   };
 
   const getConversationPartner = () => {
     if (!selectedConversation) return null;
-    const partner = conversations.find(conv => conv._id === selectedConversation);
+    const conversation = conversations.find(conv => conv._id === selectedConversation);
+    if (!conversation) return null;
+    const partner = conversation.participants.find((p: any) => p._id !== user._id);
     return partner ? {
-      name: partner.firstName ? `${partner.firstName} ${partner.lastName}` : partner.companyName,
+      name: partner.name,
       role: partner.role,
-      avatar: partner.avatar
+      avatar: partner.avatar,
+      image: partner.image
     } : null;
   };
 
@@ -87,9 +181,9 @@ export default function Messages() {
           {selectedConversation ? (
             <MessageContainer
               messages={messages}
-              currentUserId="currentUser"
+              currentUserId={user._id}
               onSendMessage={handleSendMessage}
-              conversationPartner={getConversationPartner()!}
+              conversationPartner={getConversationPartner()}
             />
           ) : (
             <div className="flex items-center justify-center h-full">

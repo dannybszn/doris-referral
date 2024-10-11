@@ -23,6 +23,7 @@ const CreateConversationButton: React.FC<CreateConversationButtonProps> = ({ onC
   const [isOpen, setIsOpen] = useState(false);
   const [selectedTalent, setSelectedTalent] = useState<Talent | null>(null);
   const [search, setSearch] = useState("");
+  const [talents, setTalents] = useState<Talent[]>([]);
   const [filteredTalents, setFilteredTalents] = useState<Talent[]>([]);
   const [showAlert, setShowAlert] = useState(false);
 
@@ -33,6 +34,7 @@ const CreateConversationButton: React.FC<CreateConversationButtonProps> = ({ onC
       try {
         const response = await fetch('/api/talents');
         const data: Talent[] = await response.json();
+        setTalents(data);
         setFilteredTalents(data);
       } catch (error) {
         console.error('Error fetching talents:', error);
@@ -43,13 +45,12 @@ const CreateConversationButton: React.FC<CreateConversationButtonProps> = ({ onC
   }, []);
 
   useEffect(() => {
-    setFilteredTalents(prevTalents =>
-      prevTalents.filter(talent => 
-        talent.firstName.toLowerCase().includes(search.toLowerCase()) ||
-        talent.lastName.toLowerCase().includes(search.toLowerCase())
-      )
+    const filtered = talents.filter(talent => 
+      talent.firstName.toLowerCase().includes(search.toLowerCase()) ||
+      talent.lastName.toLowerCase().includes(search.toLowerCase())
     );
-  }, [search]);
+    setFilteredTalents(filtered);
+  }, [search, talents]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -64,7 +65,7 @@ const CreateConversationButton: React.FC<CreateConversationButtonProps> = ({ onC
   const handleOpenChange = (open: boolean) => {
     if (!canInitiateConversation) {
       setShowAlert(true);
-      setTimeout(() => setShowAlert(false), 3000); // Hide alert after 3 seconds
+      setTimeout(() => setShowAlert(false), 3000);
       return;
     }
     setIsOpen(open);
@@ -133,26 +134,22 @@ const CreateConversationButton: React.FC<CreateConversationButtonProps> = ({ onC
                       className="flex-1 bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground"
                     />
                   </div>
-                  {search && (
-                    <>
-                      <CommandEmpty>No model found.</CommandEmpty>
-                      <CommandGroup className="max-h-[200px] overflow-auto">
-                        {filteredTalents.map((talent) => (
-                          <CommandItem
-                            key={talent._id}
-                            onSelect={() => handleSelectTalent(talent)}
-                            className="flex items-center px-3 py-2 cursor-pointer hover:bg-accent"
-                          >
-                            <Avatar className="h-8 w-8 mr-2">
-                              <AvatarImage src={talent.avatar} alt={`${talent.firstName} ${talent.lastName}`} />
-                              <AvatarFallback>{talent.firstName.charAt(0)}</AvatarFallback>
-                            </Avatar>
-                            {`${talent.firstName} ${talent.lastName}`}
-                          </CommandItem>
-                        ))}
-                      </CommandGroup>
-                    </>
-                  )}
+                  <CommandEmpty>No model found.</CommandEmpty>
+                  <CommandGroup className="max-h-[200px] overflow-auto">
+                    {filteredTalents.map((talent) => (
+                      <CommandItem
+                        key={talent._id}
+                        onSelect={() => handleSelectTalent(talent)}
+                        className="flex items-center px-3 py-2 cursor-pointer hover:bg-accent"
+                      >
+                        <Avatar className="h-8 w-8 mr-2">
+                          <AvatarImage src={talent.avatar} alt={`${talent.firstName} ${talent.lastName}`} />
+                          <AvatarFallback>{talent.firstName.charAt(0)}</AvatarFallback>
+                        </Avatar>
+                        {`${talent.firstName} ${talent.lastName}`}
+                      </CommandItem>
+                    ))}
+                  </CommandGroup>
                 </Command>
               )}
             </div>

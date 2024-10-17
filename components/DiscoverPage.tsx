@@ -13,13 +13,14 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { ChevronDown } from 'lucide-react';
+import Image from 'next/image';
 
 interface Talent {
   _id: string;
   firstName: string;
   lastName: string;
   companyName?: string;
-  image?: string;
+  avatar?: string;
   role: string;
   // Add other properties as needed
 }
@@ -126,17 +127,25 @@ const DiscoverPage: React.FC = () => {
         </DropdownMenu>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+      <div className="flex flex-wrap justify-center gap-12">
         {filteredTalents.map((talent) => (
-          <Card key={talent._id} className="cursor-pointer" onClick={() => handleTalentClick(talent)}>
-            <CardContent className="p-4">
-              <img
-                src={talent.image || `https://ui-avatars.com/api/?name=${talent.firstName}+${talent.lastName}`}
+          <Card 
+            key={talent._id} 
+            className="cursor-pointer overflow-hidden w-full max-w-[280px] flex-grow-0 flex-shrink-0 basis-[calc(25%-2.25rem)]" 
+            onClick={() => handleTalentClick(talent)}
+          >
+            <div className="relative pt-[100%]">
+              <Image
+                src={talent.avatar || `https://ui-avatars.com/api/?name=${talent.firstName}+${talent.lastName}`}
                 alt={`${talent.firstName} ${talent.lastName}`}
-                className="w-full h-36 object-cover mb-4 rounded-md"
+                layout="fill"
+                objectFit="cover"
+                className="absolute inset-0 w-full h-full"
               />
-              <h3 className="font-semibold text-lg">{`${talent.firstName} ${talent.lastName}`}</h3>
-              <p className="text-sm text-muted-foreground">{talent.role}</p>
+            </div>
+            <CardContent className="p-4">
+              <h3 className="font-semibold text-base truncate">{`${talent.firstName} ${talent.lastName}`}</h3>
+              <p className="text-sm text-muted-foreground truncate">{talent.role}</p>
             </CardContent>
           </Card>
         ))}

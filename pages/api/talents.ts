@@ -22,7 +22,7 @@ export default async function handler(
 
     // Fetch all users with the role 'model'
     const talents = await User.find({ role: 'model' })
-      .select('_id firstName lastName companyName image role')
+      .select('_id firstName lastName companyName avatar role')
 
     res.status(200).json(talents)
   } catch (error) {

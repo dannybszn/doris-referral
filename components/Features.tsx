@@ -1,21 +1,21 @@
-import { Cpu, Cloud, Zap } from 'lucide-react';
+import { Users, Building2, MessageSquare } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 
 const features = [
   {
-    icon: Cpu,
-    title: 'AI Solutions',
-    description: 'Cutting-edge artificial intelligence to power your business.',
+    icon: Users,
+    title: 'Model Showcase',
+    description: 'Create a stunning portfolio to showcase your talent and catch the eye of top agencies.',
   },
   {
-    icon: Cloud,
-    title: 'Cloud Services',
-    description: 'Scalable and secure cloud infrastructure for your applications.',
+    icon: Building2,
+    title: 'Agency Access',
+    description: 'Get direct access to leading modeling agencies and increase your chances of signing with them.',
   },
   {
-    icon: Zap,
-    title: 'IoT Integration',
-    description: 'Connect and manage your devices with our IoT platform.',
+    icon: MessageSquare,
+    title: 'Direct Communication',
+    description: 'Connect and communicate directly with agency representatives through our secure platform.',
   },
 ];
 

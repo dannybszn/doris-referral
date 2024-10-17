@@ -1,6 +1,4 @@
-'use client';
-
-import React, { useState } from 'react';
+import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { X } from 'lucide-react';
 import { Button } from "@/components/ui/button";
@@ -11,7 +9,7 @@ interface TalentDetails {
   firstName: string;
   lastName: string;
   role: string;
-  image?: string;
+  avatar?: string;
   companyName?: string;
   bio?: string;
   age?: number;
@@ -30,34 +28,36 @@ interface TalentDetailsPopupProps {
 }
 
 const TalentDetailsPopup: React.FC<TalentDetailsPopupProps> = ({ talent, isOpen, onClose }) => {
-  const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
-
   if (!talent) return null;
-
-  const allPhotos = [talent.image || `https://ui-avatars.com/api/?name=${talent.firstName}+${talent.lastName}`];
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[600px] bg-background text-foreground p-0 overflow-hidden">
+      <DialogContent className="sm:max-w-[600px] bg-background text-foreground p-0 overflow-hidden border border-gray-700 [&>button]:hidden">
         <DialogHeader className="p-6 pb-0">
           <DialogTitle className="text-3xl font-bold">{`${talent.firstName} ${talent.lastName}`}</DialogTitle>
           <Button
             variant="ghost"
             size="icon"
-            className="absolute right-4 top-4 rounded-full"
+            className="absolute right-4 top-4 rounded-full hover:bg-accent hover:text-accent-foreground"
             onClick={onClose}
           >
             <X className="h-4 w-4" />
           </Button>
         </DialogHeader>
         <div className="flex flex-col md:flex-row">
-          <div className="w-full md:w-1/2 p-6">
-            <div className="relative aspect-square mb-4">
-              <img
-                src={allPhotos[currentPhotoIndex]}
-                alt={`${talent.firstName} ${talent.lastName}`}
-                className="w-full h-full object-cover rounded-md"
-              />
+          <div className="w-full md:w-1/2 p-4">
+            <div className="aspect-square bg-gray-200 overflow-hidden rounded-lg border-2 border-gray-700 shadow-md">
+              {talent.avatar ? (
+                <img
+                  src={talent.avatar}
+                  alt={`${talent.firstName} ${talent.lastName}`}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center text-6xl font-bold text-gray-400">
+                  {talent.firstName[0]}{talent.lastName[0]}
+                </div>
+              )}
             </div>
           </div>
           <div className="w-full md:w-1/2 p-6 space-y-4">

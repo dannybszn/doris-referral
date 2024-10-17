@@ -11,7 +11,7 @@ export default function Hero() {
       </div>
       <h1 className="text-4xl font-bold mb-2">DTA</h1>
       <p className="text-2xl text-muted-foreground mb-8">
-        Innovative solutions for your business
+        Connecting models with top agencies
       </p>
       <div className="space-x-4">
         <Button size="lg" className="discord-button" asChild>

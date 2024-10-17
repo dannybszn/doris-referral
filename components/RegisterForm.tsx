@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
@@ -13,12 +13,12 @@ import { useAuth } from '@/lib/AuthContext';
 type UserRole = 'model' | 'agency';
 
 const MAX_IMAGE_SIZE = 800; // Maximum width or height in pixels
-const MAX_FILE_SIZE = 1 * 1024 * 1024; // 1MB
+const MAX_FILE_SIZE = 15 * 1024 * 1024; // 1MB
 
 const resizeImage = (file: File): Promise<string> => {
   return new Promise((resolve, reject) => {
     if (file.size > MAX_FILE_SIZE) {
-      reject(new Error('File size exceeds 1MB limit'));
+      reject(new Error('File size exceeds 15MB limit'));
       return;
     }
 
@@ -72,10 +72,26 @@ export default function RegisterForm() {
   const [alert, setAlert] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const router = useRouter();
   const { login } = useAuth();
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleRoleSelect = (selectedRole: UserRole) => {
     setRole(selectedRole);
     setShowForm(true);
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > MAX_FILE_SIZE) {
+        setAlert({ message: "File size exceeds 1MB limit. Please choose a smaller image.", type: "error" });
+        if (fileInputRef.current) {
+          fileInputRef.current.value = '';
+        }
+      } else {
+        setAvatar(file);
+        setAlert(null);
+      }
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -191,13 +207,14 @@ export default function RegisterForm() {
                 </div>
               </div>
               <div>
-                <Label htmlFor="avatar">Profile Picture</Label>
+                <Label htmlFor="avatar">Profile Picture (max 1MB)</Label>
                 <Input
                   id="avatar"
                   type="file"
-                  onChange={(e) => setAvatar(e.target.files?.[0] || null)}
+                  onChange={handleFileChange}
                   accept="image/*"
                   required
+                  ref={fileInputRef}
                 />
               </div>
             </>

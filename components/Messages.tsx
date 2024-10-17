@@ -6,6 +6,8 @@ import MessageList from '@/components/MessageList';
 import MessageContainer from '@/components/MessageContainer';
 import CreateConversationButton from '@/components/CreateConversationButton';
 import { useAuth } from '@/lib/AuthContext';
+import { Card, CardContent } from "@/components/ui/card";
+import { Inbox, MessageSquarePlus } from 'lucide-react';
 
 export default function Messages() {
   const [selectedConversation, setSelectedConversation] = useState<string | null>(null);
@@ -33,6 +35,7 @@ export default function Messages() {
       fetchMessages(selectedConversation);
     }
   }, [selectedConversation]);
+
 
   const setupSSE = () => {
     const token = localStorage.getItem('token');
@@ -223,40 +226,82 @@ export default function Messages() {
     return null;
   }
 
+  const renderNoConversationsMessage = () => {
+    if (userRole === 'model') {
+      return (
+        <Card className="m-4">
+          <CardContent className="pt-6">
+            <div className="flex flex-col items-center text-center space-y-4">
+              <Inbox className="h-12 w-12 text-primary" />
+              <h3 className="text-lg font-semibold">No conversations yet</h3>
+              <p className="text-muted-foreground">
+                As a model, you can't initiate conversations. When agencies contact you, their messages will appear here.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      );
+    } else {
+      return (
+        <Card className="m-4">
+          <CardContent className="pt-6">
+            <div className="flex flex-col items-center text-center space-y-4">
+              <MessageSquarePlus className="h-12 w-12 text-primary" />
+              <h3 className="text-lg font-semibold">Start a new conversation</h3>
+              <p className="text-muted-foreground">
+                You don't have any conversations yet. Click the 'Create New Conversation' button above to get started.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      );
+    }
+  };
+
   return (
     <div className="container mx-auto px-4 py-8 h-[calc(100vh-4rem)]">
       <h1 className="text-3xl font-bold mb-4">Messages</h1>
       <div className="flex h-[calc(100%-3rem)] bg-background border border-border rounded-lg overflow-hidden">
         <div className="w-1/3 border-r border-border flex flex-col">
-          <div className="p-4">
-            <CreateConversationButton 
-              onCreateConversation={createNewConversation} 
-              userRole={userRole as 'model' | 'agency' | 'admin'}
-              existingConversations={conversations}
-            />
-          </div>
+          {userRole !== 'model' && (
+            <div className="p-4">
+              <CreateConversationButton 
+                onCreateConversation={createNewConversation} 
+                userRole={userRole as 'model' | 'agency' | 'admin'}
+                existingConversations={conversations}
+              />
+            </div>
+          )}
           <div className="flex-grow overflow-y-auto">
-            <MessageList
-              conversations={conversations}
-              selectedConversation={selectedConversation}
-              onSelectConversation={setSelectedConversation}
-              loading={loading}
-              currentUserId={user._id}
-            />
+            {conversations.length === 0 ? (
+              renderNoConversationsMessage()
+            ) : (
+              <MessageList
+                conversations={conversations}
+                selectedConversation={selectedConversation}
+                onSelectConversation={setSelectedConversation}
+                loading={loading}
+                currentUserId={user?._id}
+              />
+            )}
           </div>
         </div>
         <div className="w-2/3">
           {selectedConversation ? (
             <MessageContainer
               conversation={conversations.find(conv => conv._id === selectedConversation)}
-              currentUserId={user._id}
+              currentUserId={user?._id}
               onSendMessage={handleSendMessage}
               userRole={userRole as string}
               onDeleteConversation={handleDeleteConversation}
             />
           ) : (
             <div className="flex items-center justify-center h-full">
-              <p className="text-muted-foreground">Select a conversation to start messaging</p>
+              <p className="text-muted-foreground text-center max-w-md">
+                {userRole === 'model' 
+                  ? "When you receive messages from agencies, you can view and respond to them here."
+                  : "Select a conversation to start messaging or create a new one."}
+              </p>
             </div>
           )}
         </div>

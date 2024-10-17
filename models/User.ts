@@ -7,7 +7,7 @@ const UserSchema = new mongoose.Schema({
   email: { type: String, unique: true },
   phoneNumber: String,
   password: String,
-  avatar: String, // This will now store the base64 string
+  avatar: String,
   role: { type: String, enum: ['model', 'agency'], default: 'model' },
   bio: String,
   age: Number,

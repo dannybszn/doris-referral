@@ -4,7 +4,7 @@ import { Inter } from 'next/font/google';
 import { ThemeProvider } from "@/components/theme-provider"
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
-import { MockAuthProvider } from '@/lib/mockAuthContext';
+import { AuthProvider } from '@/lib/AuthContext';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -22,7 +22,7 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body className={inter.className}>
         <ThemeProvider>
-          <MockAuthProvider>
+          <AuthProvider>
             <div className="flex flex-col min-h-screen">
               <Header />
               <main className="flex-grow">
@@ -30,7 +30,7 @@ export default function RootLayout({
               </main>
               <Footer />
             </div>
-          </MockAuthProvider>
+          </AuthProvider>
         </ThemeProvider>
       </body>
     </html>

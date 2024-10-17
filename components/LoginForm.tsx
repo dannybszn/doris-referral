@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import Alert from '@/components/Alert';
+import { useAuth } from '@/lib/AuthContext';
 
 export default function LoginForm() {
   const [email, setEmail] = useState('');
@@ -14,6 +15,7 @@ export default function LoginForm() {
   const [isLoading, setIsLoading] = useState(false);
   const [alert, setAlert] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const router = useRouter();
+  const { login } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -30,10 +32,11 @@ export default function LoginForm() {
       const data = await response.json();
 
       if (response.ok) {
-        localStorage.setItem('token', data.token);
+        login(data.token, data.role);
         setAlert({ message: "Login Successful", type: "success" });
         router.push('/account/discover');
       } else {
+        console.error('Login failed:', data.message);
         setAlert({ message: data.message || "An error occurred during login.", type: "error" });
       }
     } catch (error) {

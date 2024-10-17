@@ -42,35 +42,31 @@ export default async function handler(
         return res.status(401).json({ message: 'Unauthorized' })
       }
 
-      const decoded = jwt.verify(token, process.env.JWT_SECRET!) as { userId: string }
+      const decoded = jwt.verify(token, process.env.JWT_SECRET!) as { userId: string, role: string }
       await connectToDatabase()
 
-      const conversation = await Conversation.findOne({
-        _id: conversationId,
-        participants: decoded.userId
-      })
+      console.log('User role:', decoded.role); // Add this line for debugging
 
-      if (!conversation) {
+      // Check if the user has the required role
+      if (decoded.role !== 'agency' && decoded.role !== 'admin') {
+        console.log('Insufficient permissions. User role:', decoded.role); // Add this line for debugging
+        return res.status(403).json({ message: 'Forbidden: Insufficient permissions' })
+      }
+
+      // Delete the conversation
+      const deletedConversation = await Conversation.findByIdAndDelete(conversationId)
+
+      if (!deletedConversation) {
         return res.status(404).json({ message: 'Conversation not found' })
       }
 
-      // Remove the user from the participants array
-      conversation.participants = conversation.participants.filter(
-        (participantId) => participantId.toString() !== decoded.userId
-      )
+      // Delete all messages associated with the conversation
+      await Message.deleteMany({ conversation: conversationId })
 
-      if (conversation.participants.length === 0) {
-        // If no participants left, delete the conversation and its messages
-        await Message.deleteMany({ conversation: conversationId })
-        await Conversation.findByIdAndDelete(conversationId)
-      } else {
-        // Otherwise, just save the updated conversation
-        await conversation.save()
-      }
-
-      res.status(200).json({ message: 'Conversation removed successfully' })
+      console.log('Conversation deleted successfully'); // Add this line for debugging
+      res.status(200).json({ message: 'Conversation and associated messages deleted successfully' })
     } catch (error) {
-      console.error('Error removing conversation:', error)
+      console.error('Error deleting conversation:', error)
       res.status(500).json({ message: 'Server error' })
     }
   } else {

@@ -17,19 +17,29 @@ export default async function handler(
 
     const { email, password } = req.body
 
+    console.log('Login attempt for email:', email);
+
     const user = await User.findOne({ email })
     if (!user) {
+      console.log('User not found');
       return res.status(400).json({ message: 'Invalid credentials' })
     }
 
     const isMatch = await bcrypt.compare(password, user.password)
     if (!isMatch) {
+      console.log('Password does not match');
       return res.status(400).json({ message: 'Invalid credentials' })
     }
 
-    const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET!, { expiresIn: '1h' })
+    console.log('Login successful for user:', user._id);
 
-    res.status(200).json({ token })
+    const token = jwt.sign(
+      { userId: user._id, role: user.role },
+      process.env.JWT_SECRET!,
+      { expiresIn: '1h' }
+    )
+
+    res.status(200).json({ token, role: user.role })
   } catch (error) {
     console.error('Login error:', error)
     res.status(500).json({ message: 'Server error' })

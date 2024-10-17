@@ -8,8 +8,53 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import Alert from '@/components/Alert';
+import { useAuth } from '@/lib/AuthContext';
 
 type UserRole = 'model' | 'agency';
+
+const MAX_IMAGE_SIZE = 800; // Maximum width or height in pixels
+const MAX_FILE_SIZE = 1 * 1024 * 1024; // 1MB
+
+const resizeImage = (file: File): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    if (file.size > MAX_FILE_SIZE) {
+      reject(new Error('File size exceeds 1MB limit'));
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = (event) => {
+      const img = new Image();
+      img.src = event.target?.result as string;
+      img.onload = () => {
+        const elem = document.createElement('canvas');
+        let width = img.width;
+        let height = img.height;
+
+        if (width > height) {
+          if (width > MAX_IMAGE_SIZE) {
+            height *= MAX_IMAGE_SIZE / width;
+            width = MAX_IMAGE_SIZE;
+          }
+        } else {
+          if (height > MAX_IMAGE_SIZE) {
+            width *= MAX_IMAGE_SIZE / height;
+            height = MAX_IMAGE_SIZE;
+          }
+        }
+
+        elem.width = width;
+        elem.height = height;
+        const ctx = elem.getContext('2d');
+        ctx?.drawImage(img, 0, 0, width, height);
+        resolve(elem.toDataURL('image/jpeg', 0.6)); // Reduced quality to 0.6
+      };
+      img.onerror = reject;
+    };
+    reader.onerror = reject;
+  });
+};
 
 export default function RegisterForm() {
   const [showForm, setShowForm] = useState(false);
@@ -26,6 +71,7 @@ export default function RegisterForm() {
   const [isLoading, setIsLoading] = useState(false);
   const [alert, setAlert] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const router = useRouter();
+  const { login } = useAuth();
 
   const handleRoleSelect = (selectedRole: UserRole) => {
     setRole(selectedRole);
@@ -43,35 +89,49 @@ export default function RegisterForm() {
       return;
     }
 
-    const formData = new FormData();
-    if (role === 'model') {
-      formData.append('firstName', firstName);
-      formData.append('lastName', lastName);
-      if (avatar) {
-        formData.append('avatar', avatar);
+    let avatarBase64 = '';
+    if (role === 'model' && avatar) {
+      try {
+        avatarBase64 = await resizeImage(avatar);
+      } catch (error) {
+        console.error('Error resizing image:', error);
+        setAlert({ message: "Error processing image. Please try again with a smaller image (max 1MB).", type: "error" });
+        setIsLoading(false);
+        return;
       }
-    } else {
-      formData.append('companyName', companyName);
-      formData.append('signupCode', signupCode);
     }
-    formData.append('email', email);
-    formData.append('phoneNumber', phoneNumber);
-    formData.append('password', password);
-    formData.append('role', role);
+
+    const userData = {
+      firstName: role === 'model' ? firstName : undefined,
+      lastName: role === 'model' ? lastName : undefined,
+      companyName: role === 'agency' ? companyName : undefined,
+      email,
+      phoneNumber,
+      password,
+      role,
+      avatar: avatarBase64,
+      signupCode: role === 'agency' ? signupCode : undefined
+    };
 
     try {
+      console.log('Sending registration data...');
       const response = await fetch('/api/register', {
         method: 'POST',
-        body: formData,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(userData),
       });
 
       const data = await response.json();
 
       if (response.ok) {
-        localStorage.setItem('token', data.token);
+        console.log('Registration successful');
+        login(data.token, data.role);
         setAlert({ message: "Registration successful", type: "success" });
         router.push('/account/discover');
       } else {
+        console.error('Registration failed:', data.message);
         setAlert({ message: data.message || "Registration failed", type: "error" });
       }
     } catch (error) {

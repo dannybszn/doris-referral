@@ -40,7 +40,7 @@ const MessageList: React.FC<MessageListProps> = ({ conversations, selectedConver
 
   const getAvatar = (conversation: Conversation) => {
     const partner = conversation.participants.find(p => p._id !== currentUserId);
-    return partner?.avatar;
+    return partner?.avatar || '';
   };
 
   if (loading) {

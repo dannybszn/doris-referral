@@ -2,24 +2,25 @@
 
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { ChevronLeft, ChevronRight, X } from 'lucide-react';
+import { X } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
 interface TalentDetails {
   _id: string;
-  name: string;
+  firstName: string;
+  lastName: string;
   role: string;
-  image: string;
-  age?: number;
-  price: number;
+  image?: string;
+  companyName?: string;
   bio?: string;
+  age?: number;
+  height?: string;
   hairColor?: string;
   birthday?: string;
   positiveKeywords?: string[];
   negativeKeywords?: string[];
   profileLink?: string;
-  additionalPhotos?: string[];
 }
 
 interface TalentDetailsPopupProps {
@@ -33,21 +34,13 @@ const TalentDetailsPopup: React.FC<TalentDetailsPopupProps> = ({ talent, isOpen,
 
   if (!talent) return null;
 
-  const allPhotos = [talent.image, ...(talent.additionalPhotos || [])].slice(0, 4);
-
-  const nextPhoto = () => {
-    setCurrentPhotoIndex((prevIndex) => (prevIndex + 1) % allPhotos.length);
-  };
-
-  const prevPhoto = () => {
-    setCurrentPhotoIndex((prevIndex) => (prevIndex - 1 + allPhotos.length) % allPhotos.length);
-  };
+  const allPhotos = [talent.image || `https://ui-avatars.com/api/?name=${talent.firstName}+${talent.lastName}`];
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[600px] bg-background text-foreground p-0 overflow-hidden">
         <DialogHeader className="p-6 pb-0">
-          <DialogTitle className="text-3xl font-bold">{talent.name}</DialogTitle>
+          <DialogTitle className="text-3xl font-bold">{`${talent.firstName} ${talent.lastName}`}</DialogTitle>
           <Button
             variant="ghost"
             size="icon"
@@ -62,40 +55,18 @@ const TalentDetailsPopup: React.FC<TalentDetailsPopupProps> = ({ talent, isOpen,
             <div className="relative aspect-square mb-4">
               <img
                 src={allPhotos[currentPhotoIndex]}
-                alt={`${talent.name} - Photo ${currentPhotoIndex + 1}`}
+                alt={`${talent.firstName} ${talent.lastName}`}
                 className="w-full h-full object-cover rounded-md"
               />
-              {allPhotos.length > 1 && (
-                <>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="absolute left-2 top-1/2 transform -translate-y-1/2 rounded-full bg-black/50"
-                    onClick={prevPhoto}
-                  >
-                    <ChevronLeft className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="absolute right-2 top-1/2 transform -translate-y-1/2 rounded-full bg-black/50"
-                    onClick={nextPhoto}
-                  >
-                    <ChevronRight className="h-4 w-4" />
-                  </Button>
-                </>
-              )}
-            </div>
-            <div className="text-center text-sm text-muted-foreground">
-              {currentPhotoIndex + 1} / {allPhotos.length}
             </div>
           </div>
           <div className="w-full md:w-1/2 p-6 space-y-4">
             <div>
               <h3 className="text-xl font-semibold">{talent.role}</h3>
-              <p className="text-muted-foreground">{talent.age ? `${talent.age} years old` : 'Age not specified'}</p>
+              {talent.companyName && <p className="text-muted-foreground">{talent.companyName}</p>}
             </div>
-            <InfoRow label="Price" value={talent.price === 0 ? "Free" : `$${talent.price}`} />
+            <InfoRow label="Age" value={talent.age} />
+            <InfoRow label="Height" value={talent.height} />
             <InfoRow label="Hair Color" value={talent.hairColor} />
             <InfoRow label="Birthday" value={talent.birthday} />
             {talent.bio && (

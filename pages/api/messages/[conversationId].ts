@@ -22,9 +22,11 @@ export default async function handler(
 
     const { conversationId } = req.query
     const messages = await Message.find({ conversation: conversationId })
-      .sort({ timestamp: 1 })
+      .sort({ timestamp: -1 })
+      .limit(20)
+      .populate('sender', '_id firstName lastName companyName avatar role')
 
-    res.status(200).json(messages)
+    res.status(200).json(messages.reverse())
   } catch (error) {
     console.error('Error fetching messages:', error)
     res.status(500).json({ message: 'Server error' })

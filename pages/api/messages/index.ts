@@ -8,6 +8,10 @@ export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
+  console.log(`API Route Hit: ${req.method} /api/messages`);
+  console.log('Request body:', req.body);
+  console.log('Request headers:', req.headers);
+
   if (req.method !== 'POST') {
     return res.status(405).json({ message: 'Method not allowed' })
   }
@@ -18,42 +22,54 @@ export default async function handler(
       return res.status(401).json({ message: 'Unauthorized' })
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as { userId: string }
+    let decoded;
+    try {
+      decoded = jwt.verify(token, process.env.JWT_SECRET!) as { userId: string }
+    } catch (error) {
+      console.error('JWT verification failed:', error);
+      return res.status(401).json({ message: 'Invalid token' })
+    }
+
     await connectToDatabase()
 
-    const { recipientId, content } = req.body
+    console.log('Decoded userId:', decoded.userId);
+    const { conversationId, content } = req.body
+    console.log('Conversation ID:', conversationId);
+    console.log('Message content:', content);
 
-    // Find or create conversation
-    let conversation = await Conversation.findOne({
-      participants: { $all: [decoded.userId, recipientId] }
-    })
-
+    const conversation = await Conversation.findById(conversationId)
     if (!conversation) {
-      conversation = new Conversation({
-        participants: [decoded.userId, recipientId]
-      })
-      await conversation.save()
+      console.error('Conversation not found:', conversationId);
+      return res.status(404).json({ message: 'Conversation not found' })
     }
 
     const newMessage = new Message({
       sender: decoded.userId,
-      recipient: recipientId,
+      conversation: conversationId,
       content,
-      conversation: conversation._id,
       timestamp: new Date(),
       read: false
     })
 
+    console.log('New message object:', newMessage);
+
     await newMessage.save()
+
+    console.log('Message saved successfully');
 
     // Update conversation with last message
     conversation.lastMessage = newMessage._id
     conversation.updatedAt = new Date()
     await conversation.save()
 
+    // Populate the sender information
+    await newMessage.populate('sender', '_id firstName lastName companyName avatar role')
+
+    console.log('Populated message:', newMessage);
+
     res.status(201).json(newMessage)
   } catch (error) {
     console.error('Error sending message:', error)
-    res.status(500).json({ message: 'Server error' })
+    res.status(500).json({ message: 'Server error', error: error.message })
   }
 }

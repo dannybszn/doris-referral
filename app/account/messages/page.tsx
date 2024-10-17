@@ -1,17 +1,28 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import MessageList from '@/components/MessageList';
 import MessageContainer from '@/components/MessageContainer';
 import CreateConversationButton from '@/components/CreateConversationButton';
+import useSWR from 'swr';
+
+const fetcher = (url: string) => fetch(url, {
+  headers: {
+    'Authorization': `Bearer ${localStorage.getItem('token')}`
+  }
+}).then(res => res.json());
 
 export default function Messages() {
   const [selectedConversation, setSelectedConversation] = useState<string | null>(null);
-  const [conversations, setConversations] = useState<any[]>([]);
-  const [messages, setMessages] = useState<any[]>([]);
   const [user, setUser] = useState<any>(null);
   const router = useRouter();
+
+  const { data: conversations, error: conversationsError, mutate: mutateConversations } = useSWR('/api/conversations', fetcher);
+  const { data: messages, error: messagesError, mutate: mutateMessages } = useSWR(
+    selectedConversation ? `/api/messages/${selectedConversation}` : null,
+    fetcher
+  );
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -21,14 +32,7 @@ export default function Messages() {
     }
 
     fetchUser(token);
-    fetchConversations(token);
   }, [router]);
-
-  useEffect(() => {
-    if (selectedConversation) {
-      fetchMessages(selectedConversation);
-    }
-  }, [selectedConversation]);
 
   const fetchUser = async (token: string) => {
     try {
@@ -46,43 +50,6 @@ export default function Messages() {
     } catch (error) {
       console.error('Error fetching user:', error);
       router.push('/account/login');
-    }
-  };
-
-  const fetchConversations = async (token: string) => {
-    try {
-      const response = await fetch('/api/conversations', {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-      if (response.ok) {
-        const data = await response.json();
-        setConversations(data);
-      } else {
-        console.error('Failed to fetch conversations');
-      }
-    } catch (error) {
-      console.error('Error fetching conversations:', error);
-    }
-  };
-
-  const fetchMessages = async (conversationId: string) => {
-    try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`/api/messages/${conversationId}`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-      if (response.ok) {
-        const data = await response.json();
-        setMessages(data);
-      } else {
-        console.error('Failed to fetch messages');
-      }
-    } catch (error) {
-      console.error('Error fetching messages:', error);
     }
   };
 
@@ -105,54 +72,80 @@ export default function Messages() {
 
       if (response.ok) {
         const newMessage = await response.json();
-        setMessages(prevMessages => [...prevMessages, newMessage]);
-        // Refresh conversations to update last message
-        fetchConversations(token!);
+        mutateMessages(currentMessages => [...(currentMessages || []), newMessage], false);
+        mutateConversations();
       } else {
         console.error('Failed to send message');
+        throw new Error('Failed to send message');
       }
     } catch (error) {
       console.error('Error sending message:', error);
+      throw error;
     }
   };
 
-  const handleCreateConversation = async (recipientId: string) => {
+  const createNewConversation = async (conversationId: string) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('/api/conversations', {
-        method: 'POST',
+      const response = await fetch(`/api/conversations/${conversationId}`, {
         headers: {
-          'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({ recipientId })
+        }
       });
 
       if (response.ok) {
         const newConversation = await response.json();
-        setConversations(prev => [newConversation, ...prev]);
+        mutateConversations(currentConversations => [newConversation, ...(currentConversations || [])], false);
         setSelectedConversation(newConversation._id);
-        fetchMessages(newConversation._id);
       } else {
-        console.error('Failed to create new conversation');
+        console.error('Failed to fetch new conversation');
       }
     } catch (error) {
-      console.error('Error creating new conversation:', error);
+      console.error('Error fetching new conversation:', error);
     }
   };
 
-  const getConversationPartner = () => {
-    if (!selectedConversation) return null;
-    const conversation = conversations.find(conv => conv._id === selectedConversation);
-    if (!conversation) return null;
-    const partner = conversation.participants.find((p: any) => p._id !== user._id);
-    return partner ? {
-      name: partner.name,
-      role: partner.role,
-      avatar: partner.avatar,
-      image: partner.image
-    } : null;
+  const deleteConversation = async (conversationId: string) => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`/api/conversations/${conversationId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (response.ok) {
+        mutateConversations(currentConversations => 
+          (currentConversations || []).filter(conv => conv._id !== conversationId), 
+        false);
+        if (selectedConversation === conversationId) {
+          setSelectedConversation(null);
+        }
+      } else {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to delete conversation');
+      }
+    } catch (error) {
+      console.error('Error deleting conversation:', error);
+      // You might want to show an error message to the user here
+    }
   };
+
+  const getConversationPartner = useCallback(() => {
+    if (!selectedConversation || !conversations) return null;
+    const conversation = conversations.find(conv => conv._id === selectedConversation);
+    if (!conversation || !conversation.participants) return null;
+    const partner = conversation.participants.find((p: any) => p._id !== user._id);
+    if (!partner) return null;
+    return {
+      name: partner.firstName && partner.lastName
+        ? `${partner.firstName} ${partner.lastName}`
+        : partner.companyName || 'Unknown User',
+      role: partner.role || 'User',
+      avatar: partner.avatar || partner.image || ''
+    };
+  }, [selectedConversation, conversations, user]);
 
   if (!user) {
     return null;
@@ -165,25 +158,31 @@ export default function Messages() {
         <div className="w-1/3 border-r border-border flex flex-col">
           <div className="p-4">
             <CreateConversationButton 
-              onCreateConversation={handleCreateConversation} 
+              onCreateConversation={createNewConversation} 
               userRole={user.role as 'model' | 'agency' | 'admin'}
             />
           </div>
           <div className="flex-grow overflow-y-auto">
             <MessageList
-              conversations={conversations}
+              conversations={conversations || []}
               selectedConversation={selectedConversation}
               onSelectConversation={setSelectedConversation}
+              onDeleteConversation={deleteConversation}
+              loading={!conversations && !conversationsError}
+              currentUserId={user._id}
             />
           </div>
         </div>
         <div className="w-2/3">
           {selectedConversation ? (
             <MessageContainer
-              messages={messages}
+              messages={messages || []}
               currentUserId={user._id}
               onSendMessage={handleSendMessage}
-              conversationPartner={getConversationPartner()}
+              conversationPartner={getConversationPartner()!}
+              onLoadMore={() => {}} // Implement pagination if needed
+              hasMore={false} // Implement pagination if needed
+              loading={!messages && !messagesError}
             />
           ) : (
             <div className="flex items-center justify-center h-full">

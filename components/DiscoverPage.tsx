@@ -14,19 +14,37 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { ChevronDown } from 'lucide-react';
 
+interface Talent {
+  _id: string;
+  firstName: string;
+  lastName: string;
+  companyName?: string;
+  image?: string;
+  role: string;
+  // Add other properties as needed
+}
+
 const DiscoverPage: React.FC = () => {
-  const [talents, setTalents] = useState([]);
+  const [talents, setTalents] = useState<Talent[]>([]);
   const [sortOption, setSortOption] = useState('alphabetical');
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedTalent, setSelectedTalent] = useState(null);
+  const [selectedTalent, setSelectedTalent] = useState<Talent | null>(null);
   const [isFreeFilter, setIsFreeFilter] = useState(false);
   const [isNewFilter, setIsNewFilter] = useState(false);
 
   useEffect(() => {
     const fetchTalents = async () => {
       try {
-        const response = await fetch('/api/talents');
-        const data = await response.json();
+        const token = localStorage.getItem('token');
+        const response = await fetch('/api/talents', {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        if (!response.ok) {
+          throw new Error('Failed to fetch talents');
+        }
+        const data: Talent[] = await response.json();
         setTalents(data);
       } catch (error) {
         console.error('Error fetching talents:', error);
@@ -35,36 +53,24 @@ const DiscoverPage: React.FC = () => {
 
     fetchTalents();
   }, []);
+
   const filteredTalents = talents.filter(talent => {
     const searchLower = searchTerm.toLowerCase();
+    const fullName = `${talent.firstName} ${talent.lastName}`.toLowerCase();
     const matchesSearch = 
-      talent.name.toLowerCase().includes(searchLower) ||
-      talent.role.toLowerCase().includes(searchLower) ||
-      (talent.price !== undefined && talent.price.toString().includes(searchLower)) ||
-      (talent.age !== undefined && talent.age.toString().includes(searchLower)) ||
-      (talent.bio && talent.bio.toLowerCase().includes(searchLower)) ||
-      (talent.hairColor && talent.hairColor.toLowerCase().includes(searchLower)) ||
-      (talent.positiveKeywords && talent.positiveKeywords.some(keyword => keyword.toLowerCase().includes(searchLower)));
+      fullName.includes(searchLower) ||
+      talent.role.toLowerCase().includes(searchLower);
 
-    const hasNegativeKeyword = talent.negativeKeywords && talent.negativeKeywords.some(keyword => searchLower.includes(keyword.toLowerCase()));
-
-    return (isFreeFilter ? talent.price === 0 : true) && matchesSearch && !hasNegativeKeyword;
+    return matchesSearch;
   }).sort((a, b) => {
     switch (sortOption) {
-      case 'age':
-        return (a.age || 0) - (b.age || 0);
-      case 'hairColor':
-        return (a.hairColor || '').localeCompare(b.hairColor || '');
-      case 'height':
-        return (a.height || '').localeCompare(b.height || '');
-      case 'newest':
-        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      case 'alphabetical':
       default:
-        return a.name.localeCompare(b.name);
+        return `${a.firstName} ${a.lastName}`.localeCompare(`${b.firstName} ${b.lastName}`);
     }
   });
 
-  const handleTalentClick = (talent) => {
+  const handleTalentClick = (talent: Talent) => {
     setSelectedTalent(talent);
   };
 
@@ -101,7 +107,7 @@ const DiscoverPage: React.FC = () => {
         </Button>
         <Input
           type="text"
-          placeholder="Search by name, skill, price, age, bio, hair color, or keywords"
+          placeholder="Search by name or role"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           className="flex-grow"
@@ -116,18 +122,6 @@ const DiscoverPage: React.FC = () => {
             <DropdownMenuItem onClick={() => setSortOption('alphabetical')}>
               Alphabetical
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => setSortOption('age')}>
-              Age
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => setSortOption('hairColor')}>
-              Hair Color
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => setSortOption('height')}>
-              Height
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => setSortOption('newest')}>
-              Newest
-            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
@@ -137,16 +131,12 @@ const DiscoverPage: React.FC = () => {
           <Card key={talent._id} className="cursor-pointer" onClick={() => handleTalentClick(talent)}>
             <CardContent className="p-4">
               <img
-                src={talent.image}
-                alt={talent.name}
+                src={talent.image || `https://ui-avatars.com/api/?name=${talent.firstName}+${talent.lastName}`}
+                alt={`${talent.firstName} ${talent.lastName}`}
                 className="w-full h-36 object-cover mb-4 rounded-md"
               />
-              <h3 className="font-semibold text-lg">{talent.name}</h3>
+              <h3 className="font-semibold text-lg">{`${talent.firstName} ${talent.lastName}`}</h3>
               <p className="text-sm text-muted-foreground">{talent.role}</p>
-              <div className="flex justify-between text-sm mt-2">
-                <span>{talent.age ? `${talent.age} years` : 'N/A'}</span>
-                <span>{talent.price === 0 ? "Free" : `$${talent.price}`}</span>
-              </div>
             </CardContent>
           </Card>
         ))}

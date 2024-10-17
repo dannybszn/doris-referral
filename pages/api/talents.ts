@@ -1,14 +1,32 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
-import { mockTalents } from '@/lib/mockData'
+import { connectToDatabase } from '@/lib/db'
+import { User } from '@/models/User'
+import jwt from 'jsonwebtoken'
 
-export default function handler(
+export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
-  if (req.method === 'GET') {
-    res.status(200).json(mockTalents)
-  } else {
-    res.setHeader('Allow', ['GET'])
-    res.status(405).end(`Method ${req.method} Not Allowed`)
+  if (req.method !== 'GET') {
+    return res.status(405).json({ message: 'Method not allowed' })
+  }
+
+  try {
+    const token = req.headers.authorization?.split(' ')[1]
+    if (!token) {
+      return res.status(401).json({ message: 'Unauthorized' })
+    }
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as { userId: string }
+    await connectToDatabase()
+
+    // Fetch all users with the role 'model'
+    const talents = await User.find({ role: 'model' })
+      .select('_id firstName lastName companyName image role')
+
+    res.status(200).json(talents)
+  } catch (error) {
+    console.error('Error fetching talents:', error)
+    res.status(500).json({ message: 'Server error' })
   }
 }

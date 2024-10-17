@@ -25,21 +25,45 @@ export default async function handler(
   try {
     await connectToDatabase()
 
-    const form = new formidable.IncomingForm()
+    const uploadDir = path.join(process.cwd(), 'public', 'uploads')
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true })
+    }
+
+    const form = formidable({
+      uploadDir: uploadDir,
+      keepExtensions: true,
+    });
+
     form.parse(req, async (err, fields, files) => {
       if (err) {
+        console.error('Error parsing form data:', err);
         return res.status(500).json({ message: 'Error parsing form data' })
       }
 
-      const firstName = fields.firstName?.[0] || ''
-      const lastName = fields.lastName?.[0] || ''
-      const companyName = fields.companyName?.[0] || ''
-      const email = fields.email?.[0] || ''
-      const phoneNumber = fields.phoneNumber?.[0] || ''
-      const password = fields.password?.[0] || ''
-      const role = fields.role?.[0] || 'model'
-      const signupCode = fields.signupCode?.[0] || ''
+      console.log('Parsed fields:', fields);
+
+      const getField = (field: string | string[] | undefined): string => {
+        return Array.isArray(field) ? field[0] : field || '';
+      };
+
+      const firstName = getField(fields.firstName)
+      const lastName = getField(fields.lastName)
+      const companyName = getField(fields.companyName)
+      const email = getField(fields.email)
+      const phoneNumber = getField(fields.phoneNumber)
+      const password = getField(fields.password)
+      const role = getField(fields.role) || 'model'
+      const signupCode = getField(fields.signupCode)
       const avatarFile = files.avatar as formidable.File | undefined
+
+      console.log('Password type:', typeof password);
+      console.log('Password value:', password);
+
+      if (!password) {
+        console.error('Invalid password:', password);
+        return res.status(400).json({ message: 'Invalid password' })
+      }
 
       let user = await User.findOne({ email })
       if (user) {
@@ -65,32 +89,34 @@ export default async function handler(
       // Handle avatar upload for models
       let avatarPath = ''
       if (role === 'model' && avatarFile) {
-        const uploadDir = path.join(process.cwd(), 'public', 'uploads')
-        if (!fs.existsSync(uploadDir)) {
-          fs.mkdirSync(uploadDir, { recursive: true })
-        }
         const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9)
         avatarPath = path.join('uploads', `${uniqueSuffix}-${avatarFile.originalFilename}`)
-        const newPath = path.join(process.cwd(), 'public', avatarPath)
-        fs.copyFileSync(avatarFile.filepath, newPath)
       }
 
-      user = new User({
-        firstName: role === 'model' ? firstName : undefined,
-        lastName: role === 'model' ? lastName : undefined,
-        companyName: role === 'agency' ? companyName : undefined,
-        email,
-        phoneNumber,
-        password: await bcrypt.hash(password, 10),
-        avatar: avatarPath,
-        role
-      })
+      try {
+        // Hash the password
+        const hashedPassword = await bcrypt.hash(password, 10)
 
-      await user.save()
+        user = new User({
+          firstName: role === 'model' ? firstName : undefined,
+          lastName: role === 'model' ? lastName : undefined,
+          companyName: role === 'agency' ? companyName : undefined,
+          email,
+          phoneNumber,
+          password: hashedPassword,
+          avatar: avatarPath,
+          role
+        })
 
-      const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET!, { expiresIn: '1h' })
+        await user.save()
 
-      res.status(201).json({ token })
+        const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET!, { expiresIn: '1h' })
+
+        res.status(201).json({ token })
+      } catch (error) {
+        console.error('Error during user creation:', error);
+        res.status(500).json({ message: 'Error creating user' })
+      }
     })
   } catch (error) {
     console.error('Registration error:', error)

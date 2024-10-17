@@ -9,13 +9,15 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface Talent {
   _id: string;
-  firstName: string;
-  lastName: string;
-  avatar?: string;
+  firstName?: string;
+  lastName?: string;
+  companyName?: string;
+  image?: string;
+  role: string;
 }
 
 interface CreateConversationButtonProps {
-  onCreateConversation: (recipientId: string) => void;
+  onCreateConversation: (conversationId: string) => void;
   userRole: 'model' | 'agency' | 'admin';
 }
 
@@ -26,18 +28,30 @@ const CreateConversationButton: React.FC<CreateConversationButtonProps> = ({ onC
   const [talents, setTalents] = useState<Talent[]>([]);
   const [filteredTalents, setFilteredTalents] = useState<Talent[]>([]);
   const [showAlert, setShowAlert] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const canInitiateConversation = userRole === 'agency' || userRole === 'admin';
 
   useEffect(() => {
     const fetchTalents = async () => {
       try {
-        const response = await fetch('/api/talents');
+        const token = localStorage.getItem('token');
+        const response = await fetch('/api/talents', {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        if (!response.ok) {
+          throw new Error('Failed to fetch talents');
+        }
         const data: Talent[] = await response.json();
         setTalents(data);
         setFilteredTalents(data);
+        setErrorMessage(null);
       } catch (error) {
         console.error('Error fetching talents:', error);
+        setErrorMessage('Failed to load talents. Please try again later.');
       }
     };
 
@@ -45,20 +59,47 @@ const CreateConversationButton: React.FC<CreateConversationButtonProps> = ({ onC
   }, []);
 
   useEffect(() => {
-    const filtered = talents.filter(talent => 
-      talent.firstName.toLowerCase().includes(search.toLowerCase()) ||
-      talent.lastName.toLowerCase().includes(search.toLowerCase())
-    );
+    const filtered = talents.filter(talent => {
+      const fullName = `${talent.firstName || ''} ${talent.lastName || ''}`.toLowerCase();
+      const companyName = (talent.companyName || '').toLowerCase();
+      const searchLower = search.toLowerCase();
+      
+      return fullName.includes(searchLower) || companyName.includes(searchLower);
+    });
     setFilteredTalents(filtered);
   }, [search, talents]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (selectedTalent) {
-      onCreateConversation(selectedTalent._id);
-      setIsOpen(false);
-      setSelectedTalent(null);
-      setSearch("");
+      setIsLoading(true);
+      setErrorMessage(null);
+      try {
+        const token = localStorage.getItem('token');
+        const response = await fetch('/api/conversations', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ recipientId: selectedTalent._id })
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to create conversation');
+        }
+
+        const newConversation = await response.json();
+        onCreateConversation(newConversation._id);
+        setIsOpen(false);
+        setSelectedTalent(null);
+        setSearch("");
+      } catch (error) {
+        console.error('Error creating conversation:', error);
+        setErrorMessage('Failed to create conversation. Please try again.');
+      } finally {
+        setIsLoading(false);
+      }
     }
   };
 
@@ -85,6 +126,23 @@ const CreateConversationButton: React.FC<CreateConversationButtonProps> = ({ onC
     setSearch("");
   };
 
+  const getDisplayName = (talent: Talent) => {
+    if (talent.firstName && talent.lastName) {
+      return `${talent.firstName} ${talent.lastName}`;
+    }
+    return talent.companyName || 'Unknown';
+  };
+
+  const getAvatarFallback = (talent: Talent) => {
+    if (talent.firstName) {
+      return talent.firstName.charAt(0);
+    }
+    if (talent.companyName) {
+      return talent.companyName.charAt(0);
+    }
+    return 'U';
+  };
+
   return (
     <>
       {showAlert && (
@@ -109,10 +167,10 @@ const CreateConversationButton: React.FC<CreateConversationButtonProps> = ({ onC
                 <div className="flex items-center justify-between p-2 bg-accent rounded-lg">
                   <div className="flex items-center">
                     <Avatar className="h-8 w-8 mr-2">
-                      <AvatarImage src={selectedTalent.avatar} alt={`${selectedTalent.firstName} ${selectedTalent.lastName}`} />
-                      <AvatarFallback>{selectedTalent.firstName.charAt(0)}</AvatarFallback>
+                      <AvatarImage src={selectedTalent.image} alt={getDisplayName(selectedTalent)} />
+                      <AvatarFallback>{getAvatarFallback(selectedTalent)}</AvatarFallback>
                     </Avatar>
-                    <span>{`${selectedTalent.firstName} ${selectedTalent.lastName}`}</span>
+                    <span>{getDisplayName(selectedTalent)}</span>
                   </div>
                   <Button
                     variant="ghost"
@@ -134,27 +192,32 @@ const CreateConversationButton: React.FC<CreateConversationButtonProps> = ({ onC
                       className="flex-1 bg-transparent py-3 text-sm outline-none placeholder:text-muted-foreground"
                     />
                   </div>
-                  <CommandEmpty>No model found.</CommandEmpty>
-                  <CommandGroup className="max-h-[200px] overflow-auto">
+                  <CommandEmpty>No models found.</CommandEmpty>
+                  <CommandGroup>
                     {filteredTalents.map((talent) => (
                       <CommandItem
                         key={talent._id}
                         onSelect={() => handleSelectTalent(talent)}
-                        className="flex items-center px-3 py-2 cursor-pointer hover:bg-accent"
+                        className="py-2"
                       >
                         <Avatar className="h-8 w-8 mr-2">
-                          <AvatarImage src={talent.avatar} alt={`${talent.firstName} ${talent.lastName}`} />
-                          <AvatarFallback>{talent.firstName.charAt(0)}</AvatarFallback>
+                          <AvatarImage src={talent.image} alt={getDisplayName(talent)} />
+                          <AvatarFallback>{getAvatarFallback(talent)}</AvatarFallback>
                         </Avatar>
-                        {`${talent.firstName} ${talent.lastName}`}
+                        {getDisplayName(talent)}
                       </CommandItem>
                     ))}
                   </CommandGroup>
                 </Command>
               )}
             </div>
-            <Button type="submit" className="w-full" disabled={!selectedTalent}>
-              Start Conversation
+            {errorMessage && (
+              <Alert variant="destructive">
+                <AlertDescription>{errorMessage}</AlertDescription>
+              </Alert>
+            )}
+            <Button type="submit" className="w-full" disabled={!selectedTalent || isLoading}>
+              {isLoading ? 'Creating...' : 'Start Conversation'}
             </Button>
           </form>
         </DialogContent>

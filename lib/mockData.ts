@@ -1,10 +1,9 @@
 export const mockTalents = [
   {
     _id: '1',
-    firstName: 'John',
-    lastName: 'Doe',
+    name: 'John Doe',
     role: 'Actor',
-    avatar: 'https://i.pravatar.cc/300?img=1',
+    image: 'https://i.pravatar.cc/300?img=1',
     age: 28,
     price: 25,
     bio: 'Passionate actor with experience in theater and film.',
@@ -21,10 +20,9 @@ export const mockTalents = [
   },
   {
     _id: '2',
-    firstName: 'Emma',
-    lastName: 'Watson',
+    name: 'Emma Watson',
     role: 'Model',
-    avatar: 'https://i.pravatar.cc/300?img=2',
+    image: 'https://i.pravatar.cc/300?img=2',
     age: 25,
     price: 30,
     bio: 'Professional model with a passion for fashion and photography.',
@@ -41,10 +39,9 @@ export const mockTalents = [
   },
   {
     _id: '3',
-    firstName: 'Michael',
-    lastName: 'Chen',
+    name: 'Michael Chen',
     role: 'Musician',
-    avatar: 'https://i.pravatar.cc/300?img=3',
+    image: 'https://i.pravatar.cc/300?img=3',
     age: 32,
     price: 40,
     bio: 'Versatile musician skilled in multiple instruments and genres.',
@@ -61,10 +58,9 @@ export const mockTalents = [
   },
   {
     _id: '4',
-    firstName: 'Sophia',
-    lastName: 'Rodriguez',
+    name: 'Sophia Rodriguez',
     role: 'Dancer',
-    avatar: 'https://i.pravatar.cc/300?img=4',
+    image: 'https://i.pravatar.cc/300?img=4',
     age: 23,
     price: 35,
     bio: 'Talented dancer specializing in contemporary and ballet.',
@@ -81,10 +77,9 @@ export const mockTalents = [
   },
   {
     _id: '5',
-    firstName: 'David',
-    lastName: 'Kim',
+    name: 'David Kim',
     role: 'Photographer',
-    avatar: 'https://i.pravatar.cc/300?img=5',
+    image: 'https://i.pravatar.cc/300?img=5',
     age: 29,
     price: 50,
     bio: 'Award-winning photographer with a unique eye for composition.',
@@ -101,10 +96,9 @@ export const mockTalents = [
   },
   {
     _id: '6',
-    firstName: 'Olivia',
-    lastName: 'Taylor',
+    name: 'Olivia Taylor',
     role: 'Voice Actor',
-    avatar: 'https://i.pravatar.cc/300?img=6',
+    image: 'https://i.pravatar.cc/300?img=6',
     age: 27,
     price: 45,
     bio: 'Versatile voice actor with experience in animation and video games.',
@@ -121,10 +115,9 @@ export const mockTalents = [
   },
   {
     _id: '7',
-    firstName: 'Alexander',
-    lastName: 'Novak',
+    name: 'Alexander Novak',
     role: 'Makeup Artist',
-    avatar: 'https://i.pravatar.cc/300?img=7',
+    image: 'https://i.pravatar.cc/300?img=7',
     age: 31,
     price: 55,
     bio: 'Creative makeup artist specializing in special effects and high fashion.',
@@ -141,10 +134,9 @@ export const mockTalents = [
   },
   {
     _id: '8',
-    firstName: 'Isabella',
-    lastName: 'Martinez',
+    name: 'Isabella Martinez',
     role: 'Fashion Designer',
-    avatar: 'https://i.pravatar.cc/300?img=8',
+    image: 'https://i.pravatar.cc/300?img=8',
     age: 34,
     price: 60,
     bio: 'Innovative fashion designer with a focus on sustainable and ethical fashion.',
@@ -161,10 +153,9 @@ export const mockTalents = [
   },
   {
     _id: '9',
-    firstName: 'Liam',
-    lastName: "O'Connor",
+    name: "Liam O'Connor",
     role: 'Stunt Performer',
-    avatar: 'https://i.pravatar.cc/300?img=9',
+    image: 'https://i.pravatar.cc/300?img=9',
     age: 30,
     price: 70,
     bio: 'Experienced stunt performer with expertise in martial arts and parkour.',
@@ -181,10 +172,9 @@ export const mockTalents = [
   },
   {
     _id: '10',
-    firstName: 'Zoe',
-    lastName: 'Patel',
+    name: 'Zoe Patel',
     role: 'Costume Designer',
-    avatar: 'https://i.pravatar.cc/300?img=19',
+    image: 'https://i.pravatar.cc/300?img=19',
     age: 33,
     price: 65,
     bio: 'Talented costume designer with experience in theater, film, and television.',
@@ -201,6 +191,59 @@ export const mockTalents = [
   },
 ];
 
+// ... (previous mock data)
+
+export const mockMessages = [
+  {
+    _id: '1',
+    sender: '2', // Assuming '2' is an agency or non-current user
+    recipient: 'currentUser',
+    content: "Hi there! I'm interested in your portfolio.",
+    timestamp: '2023-05-01T10:00:00Z',
+    read: true,
+  },
+  {
+    _id: '2',
+    sender: 'currentUser',
+    recipient: '2',
+    content: 'Hello! Thank you for your interest. What would you like to know?',
+    timestamp: '2023-05-01T10:05:00Z',
+    read: true,
+  },
+  {
+    _id: '3',
+    sender: '2',
+    recipient: 'currentUser',
+    content: "I was wondering if you're available for a photoshoot next week?",
+    timestamp: '2023-05-01T10:10:00Z',
+    read: false,
+  },
+  {
+    _id: '4',
+    sender: '1',
+    recipient: 'currentUser',
+    content: 'We have a new opportunity for you. Are you interested?',
+    timestamp: '2023-05-02T09:00:00Z',
+    read: true,
+  },
+  {
+    _id: '5',
+    sender: 'currentUser',
+    recipient: '1',
+    content: 'Absolutely! Can you provide more details about the opportunity?',
+    timestamp: '2023-05-02T09:15:00Z',
+    read: true,
+  },
+  {
+    _id: '6',
+    sender: '3',
+    recipient: 'currentUser',
+    content: "Hey! I saw your recent work. It's amazing!",
+    timestamp: '2023-05-03T14:00:00Z',
+    read: false,
+  },
+];
+
 export const mockConversations = [
   {
     _id: '1',
@@ -209,6 +252,10 @@ export const mockConversations = [
     companyName: undefined,
     avatar: 'https://i.pravatar.cc/150?img=1',
     role: 'model',
+    lastMessage: {
+      content: "We have a new opportunity for you. Are you interested?",
+      timestamp: '2023-05-02T09:00:00Z',
+    },
   },
   {
     _id: '2',
@@ -217,6 +264,10 @@ export const mockConversations = [
     companyName: 'Model Agency Inc.',
     avatar: 'https://i.pravatar.cc/150?img=2',
     role: 'agency',
+    lastMessage: {
+      content: "I was wondering if you're available for a photoshoot next week?",
+      timestamp: '2023-05-01T10:10:00Z',
+    },
   },
   {
     _id: '3',
@@ -225,50 +276,11 @@ export const mockConversations = [
     companyName: undefined,
     avatar: 'https://i.pravatar.cc/150?img=3',
     role: 'model',
+    lastMessage: {
+      content: "Hey! I saw your recent work. It's amazing!",
+      timestamp: '2023-05-03T14:00:00Z',
+    },
   },
 ];
 
-export const mockMessages = [
-  {
-    _id: '1',
-    sender: '1',
-    recipient: 'currentUser',
-    content: "Hi there! I'm interested in your portfolio.",
-    timestamp: '2023-05-01T10:00:00Z',
-  },
-  {
-    _id: '2',
-    sender: 'currentUser',
-    recipient: '1',
-    content: 'Hello! Thank you for your interest. What would you like to know?',
-    timestamp: '2023-05-01T10:05:00Z',
-  },
-  {
-    _id: '3',
-    sender: '1',
-    recipient: 'currentUser',
-    content: "I was wondering if you're available for a photoshoot next week?",
-    timestamp: '2023-05-01T10:10:00Z',
-  },
-  {
-    _id: '4',
-    sender: '2',
-    recipient: 'currentUser',
-    content: 'We have a new opportunity for you. Are you interested?',
-    timestamp: '2023-05-02T09:00:00Z',
-  },
-  {
-    _id: '5',
-    sender: 'currentUser',
-    recipient: '2',
-    content: 'Absolutely! Can you provide more details about the opportunity?',
-    timestamp: '2023-05-02T09:15:00Z',
-  },
-  {
-    _id: '6',
-    sender: '3',
-    recipient: 'currentUser',
-    content: "Hey! I saw your recent work. It's amazing!",
-    timestamp: '2023-05-03T14:00:00Z',
-  },
-];
+// ... (rest of the mock data)
